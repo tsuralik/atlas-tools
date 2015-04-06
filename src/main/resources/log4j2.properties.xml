@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="FATAL">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %C - %m%n"/>
+        </Console>
+        <File name="ConsoleFile" append="false" fileName="logs/log.console.txt">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %C - %m%n"/>
+        </File>
+        <File name="ExceptionsFile" append="false" fileName="logs/log.exceptions.txt">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %C - %m%n"/>
+        </File>
+        <File name="RunningStatusFile" append="false" fileName="logs/log.runningStatus.txt">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %C - %m%n"/>
+        </File>
+    </Appenders>
+    <Loggers>
+        <Root level="INFO">
+        <!-- 
+            <AppenderRef ref="UncatalogedFile"/>
+         -->
+        </Root>
+        <!--  =============  -->
+        <!--  NAMED LOGGERS  -->
+        <!--  =============  -->
+        <Logger level="TRACE"   name="Exceptions"><AppenderRef ref="ExceptionsFile"/></Logger>
+        <Logger level="TRACE"   name="RunningStatus"><AppenderRef ref="RunningStatusFile"/></Logger>
+        <!--  =============  -->
+        <!--  CLASS LOGGERS  -->
+        <!--  =============  -->
+        <Logger level="INFO"    name="com.datatactics.l3.fcc.atlas.ecfs.sax.SolrInputDocumentFactory"><AppenderRef ref="ConsoleFile"/></Logger>
+        <Logger level="INFO"    name="com.datatactics.l3.fcc.atlas.ecfs.sax.XmlSaxParser"><AppenderRef ref="ConsoleFile"/></Logger>
+        <Logger level="INFO"    name="com.datatactics.l3.fcc.atlas.solr.FileIngester"><AppenderRef ref="ConsoleFile"/></Logger>
+        <Logger level="INFO"    name="com.datatactics.l3.fcc.atlas.solr.FileIngesterException"><AppenderRef ref="ConsoleFile"/></Logger>
+        <Logger level="INFO"    name="com.datatactics.l3.fcc.atlas.solr.LogFormatter"><AppenderRef ref="ConsoleFile"/></Logger>
+        <Logger level="INFO"    name="com.datatactics.l3.fcc.atlas.solr.SolrProxy"><AppenderRef ref="ConsoleFile"/></Logger>
+        <Logger level="DEBUG"    name="com.datatactics.l3.fcc.utils.XmlSummarizer"><AppenderRef ref="ConsoleFile"/></Logger>
+        <!-- 
+        <Logger level="WARN"   name="com.datatactics.l3.fcc.atlas.solr.FileIngester"><AppenderRef ref="ConsoleFile"/></Logger>
+         -->
+    </Loggers>
+</Configuration>
