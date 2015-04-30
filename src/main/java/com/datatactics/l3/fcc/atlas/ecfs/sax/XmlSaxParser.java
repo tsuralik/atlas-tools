@@ -52,7 +52,16 @@ public class XmlSaxParser {
             Document xmldoc = null;
             try {
                 xmldoc = (Document) builder.build(fileToIngest);
-            Element rootNode = xmldoc.getRootElement().getChild("result");
+            }
+            catch(Exception e) {
+                String header = "caught and handled parseFile exception building xml document";
+                String formattedException = LogFormatter.formatException(header, "", e);
+                exLogger.warn(formattedException);
+                
+                throw new FileIngestException(fileToIngest, e);
+            }
+
+            Element rootNode = xmldoc.getRootElement().getChild("result");            
             List<Element> docs = rootNode.getChildren("doc");
 
             for (int i = 0; i < docs.size(); i++) {
