@@ -16,6 +16,7 @@ public class XmlSummarizer {
     private static Logger logger = LogManager.getLogger(XmlSummarizer.class);
 
     private File streamFile;
+    private PrintWriter printWriter;
     private XMLStreamWriter streamWriter;
     private String currentWorkingDirectory;
     private String logDirectory;
@@ -39,10 +40,14 @@ public class XmlSummarizer {
     public void openStreamWriter() {
         try {
             streamFile = new File(logDirectory, "exceptions-ingest.xml");
-            streamWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(new PrintWriter(streamFile));
+            printWriter = new PrintWriter(streamFile);
+            streamWriter = XMLOutputFactory.newInstance().createXMLStreamWriter(printWriter);
             streamWriter.writeStartDocument();
             
+            streamWriter.flush();
+            printWriter.println();
             streamWriter.writeStartElement("FileIngest");
+            streamWriter.flush();
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -51,7 +56,8 @@ public class XmlSummarizer {
     public void startFileSummary(File ingestingFile) throws XMLStreamException {
         streamWriter.writeStartElement("File");        
         streamWriter.writeAttribute("name", ingestingFile.getName());
-        streamWriter.writeAttribute("path", ingestingFile.getPath());        
+        streamWriter.writeAttribute("path", ingestingFile.getPath());    
+        streamWriter.flush();
     }
     
     /**
@@ -67,30 +73,40 @@ public class XmlSummarizer {
         
         String id = (solrDoc == null ? "-" : solrDoc.getId());
 
+        streamWriter.flush();
+        printWriter.println();
         streamWriter.writeStartElement("Failure");
         streamWriter.writeAttribute("index", Long.toString(++index));
         streamWriter.writeAttribute("id", id);
         streamWriter.writeAttribute("textLength", Integer.toString(solrDoc.getTextLength()));        
         streamWriter.writeAttribute("exception", ex.getLocalizedMessage());
         streamWriter.writeEndElement();  //  Failure
-        
         streamWriter.flush();
     }
     
     public void endFileSummary(int successCount, int failedCount) throws XMLStreamException {
+        streamWriter.flush();
+        printWriter.println();
         streamWriter.writeStartElement("Summary");
         streamWriter.writeAttribute("Success", Integer.toString(successCount));
         streamWriter.writeAttribute("Failed", Integer.toString(failedCount));
         streamWriter.writeEndElement();  // Summary
+        streamWriter.flush();
+        printWriter.println();
         streamWriter.writeEndElement();  // File
+        streamWriter.flush();
     }
     
     public void closeStreamWriter(int successCount, int failedCount) throws XMLStreamException {
-        streamWriter.writeStartElement("Summary");
+        streamWriter.flush();
+        printWriter.println();
+        streamWriter.writeStartElement("OverallSummary");
         streamWriter.writeAttribute("Success", Integer.toString(successCount));
         streamWriter.writeAttribute("Failed", Integer.toString(failedCount));
         streamWriter.writeEndElement();  // Summary
-        
+
+        streamWriter.flush();
+        printWriter.println();        
         streamWriter.writeEndElement();  // FileIngest
         streamWriter.writeEndDocument();  
             

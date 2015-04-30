@@ -17,24 +17,22 @@ import com.datatactics.l3.fcc.utils.XmlSummarizer;
 
 
 public class FileIngester {
-    private static Logger logger = LogManager.getLogger(FileIngester.class);
+    private static Logger log = LogManager.getLogger(FileIngester.class);
     private static Logger exLogger = LogManager.getLogger("Exceptions");
     
-    private int docsSucceededCount = 0;
-    private int docsFailedCount = 0;
+    //private int docsSucceededCount = 0;
+    //private int docsFailedCount = 0;
     private XmlSummarizer xmlSummarizer = null;
     private XmlSaxParser xmlSaxParser = null;
+    private SolrProxy solr = null;
     
     public FileIngester(String zkServerIP, int zkServerPort, String collectionName, String filePath, boolean doRecurse) {
 
-        logger.debug("starting FileIngester");
+        log.debug("starting FileIngester");
+        log.debug("max memory: " + Runtime.getRuntime().maxMemory());
         
-        SolrProxy solr = null;
         try {
-            xmlSummarizer = new XmlSummarizer();
-            xmlSaxParser = new XmlSaxParser(xmlSummarizer);
-            
-            solr = new SolrProxy(zkServerIP, zkServerPort, collectionName);
+            initialize(zkServerIP, zkServerPort, collectionName);
             File file = new File(filePath);
             
             if (doRecurse) {
@@ -47,31 +45,34 @@ public class FileIngester {
             String formattedException = LogFormatter.formatException(header, "", e);
             exLogger.warn(formattedException);
         } finally {
+            int successCount = xmlSaxParser.numOfOverallSuccessDocuments();
+            int failedCount = xmlSaxParser.numOfOverallFailedDocuments();
+            
             try {
-                xmlSummarizer.closeStreamWriter(xmlSaxParser.numOfOverallSuccessDocuments(), xmlSaxParser.numOfOverallFailedDocuments());
+                xmlSummarizer.closeStreamWriter(successCount, failedCount);
             } catch (XMLStreamException xmlse) {
                 String header = "caught and ignoring error closing xmlSummarizer stream writer";
                 String formattedException = LogFormatter.formatException(header, "", xmlse);
                 exLogger.warn(formattedException);
             }
 
-            String summary = String.format("Succeeded: %1$8d | failed: %2$8d", docsSucceededCount, docsFailedCount);
-            logger.info(summary);
-//            try {
-//                xmlSummarizer.closeStreamWriter();
-//            } catch (XMLStreamException e) {
-//                String header = "could not close out xmlSummarizer mainSummaryFileWriter";
-//                String formattedException = LogFormatter.formatException(header, "", e);
-//                exLogger.warn(formattedException);
-//            }
-            logger.debug("exiting FileIngester");
+            String summary = String.format("Succeeded: %1$8d | failed: %2$8d", successCount, failedCount);
+            log.info(summary);
+
+            log.debug("exiting FileIngester");
             solr.shutdown();
             System.exit(0);
         }
     }
     
+    private void initialize(String zkServerIP, int zkServerPort, String collectionName) {
+        xmlSummarizer = new XmlSummarizer();
+        xmlSaxParser = new XmlSaxParser(xmlSummarizer);        
+        solr = new SolrProxy(zkServerIP, zkServerPort, collectionName);
+    }
+    
     private int readFile(SolrProxy solr, File file) {
-        logger.debug("read file: " + file.getAbsolutePath());
+        log.debug("read file: " + file.getAbsolutePath());
         int retVal = -1;
         
         if (file.exists() && file.isFile()) {
@@ -83,14 +84,14 @@ public class FileIngester {
                 exLogger.warn(formattedException);
             }    
         } else {
-            logger.warn(String.format("filePath is NOT a file - it is a directory : %1$s", file.getAbsolutePath()));
+            log.warn(String.format("filePath is NOT a file - it is a directory : %1$s", file.getAbsolutePath()));
         }
         
         return retVal;
     }
     
     private void recursiveRead(SolrProxy solr, File file) {
-        logger.debug("read path: " + file.getAbsolutePath());
+        log.debug("read path: " + file.getAbsolutePath());
        
         if (file.exists()) {
             if (file.isDirectory()) {
@@ -105,7 +106,7 @@ public class FileIngester {
     }
     
     private void parseFile(SolrProxy solr, File fileToIngest) throws FileIngestException {
-        logger.debug("parse file: " + fileToIngest.getAbsolutePath());
+        log.debug("parse file: " + fileToIngest.getAbsolutePath());
         
         long timeStart;
         long timeEnd;
@@ -122,8 +123,6 @@ public class FileIngester {
         
         if (xmlSaxParser.hadSuccessDocument()) {
             solr.commit();
-            docsSucceededCount += xmlSaxParser.numOfCurrentFileSuccessCount();
-            docsFailedCount += xmlSaxParser.numOfCurrentFileFailedCount();
         }
 
         catalogDuration(fileToIngest, xmlSaxParser, timeStart, timeEnd);
@@ -142,9 +141,9 @@ public class FileIngester {
     private void catalogDuration(File fileToIngest, XmlSaxParser parser, long timeStart, long timeEnd) {
         long timeDiff = timeEnd - timeStart;
         String timeFormat = "Doc success [%1$8d] & failed [%2$8s] took [%3$s] from file [%4$s]";
-        logger.info(String.format(timeFormat, 
-                parser.numOfOverallSuccessDocuments(), 
-                parser.numOfOverallFailedDocuments(), 
+        log.info(String.format(timeFormat, 
+                parser.numOfCurrentFileSuccessCount(), 
+                parser.numOfCurrentFileFailedCount(), 
                 formatTime(timeDiff), 
                 fileToIngest.getAbsolutePath()));
     }
@@ -155,7 +154,7 @@ public class FileIngester {
 
     public static void main(String[] args) throws JDOMException, IOException {
         if (args.length < 5) {
-            logger.warn("need five command line arguments - zookeeper IP, zookeeper port, the name of the collection, a full file path for ingest files, and a recursive boolean (true or false)");
+            log.warn("need five command line arguments - zookeeper IP, zookeeper port, the name of the collection, a full file path for ingest files, and a recursive boolean (true or false)");
             System.exit(0);
         }
         
@@ -165,7 +164,7 @@ public class FileIngester {
         String filePath = args[3];
         // non-boolean string values will equate to false (see Boolean javadoc)
         boolean recurse = Boolean.parseBoolean(args[4]);
-        
+
         new FileIngester(ip, port, collectionName, filePath, recurse);
     }
 }

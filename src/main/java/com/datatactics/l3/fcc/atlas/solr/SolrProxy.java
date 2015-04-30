@@ -11,12 +11,14 @@ import org.apache.solr.common.SolrInputDocument;
 import com.datatactics.l3.fcc.utils.LogFormatter;
 
 public class SolrProxy {
-    private static Logger logger = LogManager.getLogger(SolrProxy.class);
+    private static Logger log = LogManager.getLogger(SolrProxy.class);
     private static Logger exLogger = LogManager.getLogger("Exceptions");
     
     private static CloudSolrServer solrServer;
     private static String ZOOKEEPERS;
     private static String COLLECTION_NAME;
+    
+    private int tempCount = 0;
     
     // default zkServerPort - 9181
     public SolrProxy(String zkServerIP, int zkServerPort, String collectionName) {
@@ -38,6 +40,17 @@ public class SolrProxy {
     public void uploadDocument(SolrInputDocument solrDocument) throws SolrServerException, IOException
     {        
         solrServer.add(solrDocument);
+        tempCount++;
+        
+        if (tempCount == 1000) {
+            if (commit()) {
+                tempCount = 0;
+                log.debug("committed docs");
+            } else {
+                log.debug("committed docs failed");
+            }
+            
+        }
     }
     
     public boolean commit() {

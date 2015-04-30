@@ -2,10 +2,13 @@ package com.datatactics.l3.fcc.atlas.ecfs.sax;
 
 import java.util.List;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrInputDocument;
 import org.jdom2.Element;
 
 public class SolrInputDocumentFactory {
+    private static Logger log = LogManager.getLogger(SolrInputDocumentFactory.class);
     
     private String id;
     private String applicant;
@@ -20,11 +23,11 @@ public class SolrInputDocumentFactory {
     private String proceeding;
     private String regFlexAnalysis;
     private String smallBusinessImpact;
-    private String stateCd;
+    private String stateCd = "ZZ";
     private String submissionType;
     private String text;
     private String viewingStatus;
-    private String zip;
+    private String zip = "00000";
     private float  score;
     
     private Element docElement;
@@ -96,7 +99,12 @@ public class SolrInputDocumentFactory {
                 smallBusinessImpact = text("bool", arrElement);
             }
             else if (nameMatch("stateCd", arrElement)) {
-                stateCd = text("str", arrElement);
+                String value = text("str", arrElement);
+                if (value == null || value.trim().equals("")) {
+                    log.debug("use default stateCd");
+                } else {
+                    stateCd = value;
+                }
             }
             else if (nameMatch("submissionType", arrElement)) {
                 submissionType = text("str", arrElement);
@@ -108,7 +116,12 @@ public class SolrInputDocumentFactory {
                 viewingStatus = text("str", arrElement);
             }
             else if (nameMatch("zip", arrElement)) {
-                zip = text("str", arrElement);
+                String value = text("str", arrElement);
+                if (value == null || value.trim().equals("")) {
+                    log.debug("use default zip");
+                } else {
+                    zip = value;
+                }
             }
         }
     }
@@ -148,5 +161,13 @@ public class SolrInputDocumentFactory {
         document.addField("deleted", false);
         
         return document;
+    }
+    
+    public boolean hasDefaultZip() {
+        return zip.equals("00000");
+    }
+    
+    public boolean hasDefaultStateCd() {
+        return stateCd.equals("ZZ");
     }
 }

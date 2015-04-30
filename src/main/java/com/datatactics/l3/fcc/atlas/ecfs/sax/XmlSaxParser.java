@@ -1,7 +1,6 @@
 package com.datatactics.l3.fcc.atlas.ecfs.sax;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 import javax.xml.stream.XMLStreamException;
@@ -10,7 +9,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jdom2.Document;
 import org.jdom2.Element;
-import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.XMLOutputter;
 
@@ -51,7 +49,8 @@ public class XmlSaxParser {
             
             SAXBuilder builder = new SAXBuilder();
             
-            Document xmldoc;
+            Document xmldoc = null;
+            try {
                 xmldoc = (Document) builder.build(fileToIngest);
             Element rootNode = xmldoc.getRootElement().getChild("result");
             List<Element> docs = rootNode.getChildren("doc");
@@ -72,7 +71,7 @@ public class XmlSaxParser {
                    try {
                        xmlSummarizer.summarizeException(fileToIngest, null, e);
                    } catch (XMLStreamException xmlse) {
-                       header = "caught and handled the following error by not logging it to the summarizer file";
+                       header = "caught and handled the following error by logging it to the exceptions log";
                        outputter = new XMLOutputter();
                        footer = outputter.outputString(docElement);
                        formattedException = LogFormatter.formatException(header, footer, xmlse);
@@ -83,6 +82,12 @@ public class XmlSaxParser {
                if (ecfsDoc != null) {
                    try {
                        ecfsDoc.parse();
+                       if (ecfsDoc.hasDefaultZip()) {
+                           logger.debug("solrInputDoc has default zip    : " + ecfsDoc.getId());
+                       }
+                       if (ecfsDoc.hasDefaultStateCd()) {
+                           logger.debug("solrInputDoc has default stateCd: " + ecfsDoc.getId());
+                       }
                        solr.uploadDocument(ecfsDoc.createSolrInputDocument()); 
                        uploaded = true;
                    } catch(Exception e) {
@@ -116,7 +121,11 @@ public class XmlSaxParser {
                    statusLogger.trace(String.format(stringFormat, numOfCurrentDocuments(), fileToIngest.getAbsolutePath()));
                }
             }
-        } catch (JDOMException | IOException | XMLStreamException e) {
+        } catch (Exception e) {
+            String header = "caught and handled parseFile exception by exiting the parsing operation";
+            String formattedException = LogFormatter.formatException(header, "", e);
+            exLogger.warn(formattedException);
+            
             throw new FileIngestException(fileToIngest, e);
         } finally { 
             try {
