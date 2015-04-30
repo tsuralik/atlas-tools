@@ -97,6 +97,9 @@ public class XmlSaxParser {
                        if (ecfsDoc.hasDefaultStateCd()) {
                            logger.debug("solrInputDoc has default stateCd: " + ecfsDoc.getId());
                        }
+                       if (ecfsDoc.hasDefaultCity()) {
+                           logger.debug("solrInputDoc has default city   : " + ecfsDoc.getId());
+                       }
                        solr.uploadDocument(ecfsDoc.createSolrInputDocument()); 
                        uploaded = true;
                    } catch(Exception e) {

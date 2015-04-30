@@ -5,16 +5,21 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.solr.common.SolrInputDocument;
+import org.jdom2.Attribute;
 import org.jdom2.Element;
 
 public class SolrInputDocumentFactory {
     private static Logger log = LogManager.getLogger(SolrInputDocumentFactory.class);
+
+    private final static String DEFAULT_CITY    = "N/A";
+    private final static String DEFAULT_STATE   = "ZZ";
+    private final static String DEFAULT_ZIP     = "00000";
     
     private String id;
     private String applicant;
     private String applicant_sort;
     private String brief;
-    private String city;
+    private String city = DEFAULT_CITY;
     private String dateRcpt;
     private String disseminated;
     private String exParte;
@@ -23,11 +28,11 @@ public class SolrInputDocumentFactory {
     private String proceeding;
     private String regFlexAnalysis;
     private String smallBusinessImpact;
-    private String stateCd = "ZZ";
+    private String stateCd = DEFAULT_STATE;
     private String submissionType;
     private String text;
     private String viewingStatus;
-    private String zip = "00000";
+    private String zip = DEFAULT_ZIP;
     private float  score;
     
     private Element docElement;
@@ -72,7 +77,7 @@ public class SolrInputDocumentFactory {
                 brief = text("bool", arrElement);
             }
             else if (nameMatch("city", arrElement)) {
-                city = text("str", arrElement);
+                city = text("str", arrElement, "city", DEFAULT_CITY);
             }
             else if (nameMatch("dateRcpt", arrElement)) {
                 dateRcpt = text("date", arrElement);
@@ -99,12 +104,7 @@ public class SolrInputDocumentFactory {
                 smallBusinessImpact = text("bool", arrElement);
             }
             else if (nameMatch("stateCd", arrElement)) {
-                String value = text("str", arrElement);
-                if (value == null || value.trim().equals("")) {
-                    log.debug("use default stateCd");
-                } else {
-                    stateCd = value;
-                }
+                stateCd = text("str", arrElement, "stateCd", DEFAULT_STATE);
             }
             else if (nameMatch("submissionType", arrElement)) {
                 submissionType = text("str", arrElement);
@@ -116,23 +116,37 @@ public class SolrInputDocumentFactory {
                 viewingStatus = text("str", arrElement);
             }
             else if (nameMatch("zip", arrElement)) {
-                String value = text("str", arrElement);
-                if (value == null || value.trim().equals("")) {
-                    log.debug("use default zip");
-                } else {
-                    zip = value;
-                }
+                zip = text("str", arrElement, "zip", DEFAULT_ZIP);
             }
         }
     }
     
     private String text(String childName, Element element) {
-        String text = element.getChild(childName).getText();
-        return text;
+        String retVal = "";
+        Element childElement = element.getChild(childName);
+        if (childElement != null) {
+            retVal = childElement.getText().trim();
+        }
+        return retVal;
+    }
+    
+    private String text(String childName, Element element, String variableName, String defaultValue) {
+        String value = text(childName, element);
+        if (value.isEmpty()) {
+            log.debug("use default: " + variableName);
+            value = defaultValue;
+        } 
+        return value;
     }
     
     private boolean nameMatch(String name, Element element) {
-        return name.equalsIgnoreCase(element.getAttribute("name").getValue());
+        boolean retVal = false;
+        Attribute attr = element.getAttribute("name");
+        if (attr != null) {
+            String value = attr.getValue();
+            retVal = (value != null && value.equalsIgnoreCase(name));
+        }
+        return retVal;
     }
     
     public SolrInputDocument createSolrInputDocument() {
@@ -164,10 +178,14 @@ public class SolrInputDocumentFactory {
     }
     
     public boolean hasDefaultZip() {
-        return zip.equals("00000");
+        return zip.equals(DEFAULT_ZIP);
     }
     
     public boolean hasDefaultStateCd() {
-        return stateCd.equals("ZZ");
+        return stateCd.equals(DEFAULT_STATE);  
+    }
+    
+    public boolean hasDefaultCity() {
+        return city.equals(DEFAULT_CITY);
     }
 }
