@@ -53,11 +53,11 @@
                   <descriptorRefs>
                       <descriptorRef>jar-with-dependencies</descriptorRef>
                   </descriptorRefs>
-              <rules>
-                <requireJavaVersion>
-                  <version>1.7.0</version>
-                </requireJavaVersion>
-              </rules>    
+                  <rules>
+                    <requireJavaVersion>
+                      <version>1.7.0</version>
+                    </requireJavaVersion>
+                  </rules>    
                 </configuration>
             </plugin>
         </plugins>
