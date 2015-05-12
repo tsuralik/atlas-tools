@@ -23,9 +23,11 @@ public class SolrProxy {
     // default zkServerPort - 9181
     public SolrProxy(String zkServerIP, int zkServerPort, String collectionName) {
      // Add your Zookeeper URL
-        ZOOKEEPERS = zkServerIP + ":" + Integer.toString(zkServerPort);
+        ZOOKEEPERS = zkServerIP + ":" + Integer.toString(zkServerPort) + "/solr";
+        log.info("ZOOKEEPERS        : " + ZOOKEEPERS);
         // Add your Collectin Name
         COLLECTION_NAME = collectionName;
+        log.info("COLLECTION_NAME   : " + COLLECTION_NAME);
         
         connectToSolrServer();
     }
